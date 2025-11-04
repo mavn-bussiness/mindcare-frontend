@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Users, Shield, Sparkles, Check, ArrowRight, Menu, X, BookOpen, MessageCircle } from 'lucide-react';
 
-const API_URL = import.meta.env.API_URL || 'https://mindcare-backend-production.up.railway.app/api';
+const API_URL = import.meta.env.API_URL || 'https://mindcare-backend-production.up.railway.app';
 
 export default function MindCareLanding() {
   const [email, setEmail] = useState('');
