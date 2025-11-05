@@ -466,7 +466,7 @@ export default function MindCareLanding() {
           {/* Bottom Bar */}
           <div className="border-t border-gray-800 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-              <p className="text-sm">© 2024 MindCare. All rights reserved.</p>
+              <p className="text-sm">© 2025 MindCare. All rights reserved.</p>
               <div className="flex items-center space-x-6">
                 <a href="/admin" className="text-sm hover:text-emerald-400 transition-colors">Admin Portal</a>
                 <div className="flex items-center space-x-2">
