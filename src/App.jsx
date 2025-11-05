@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Users, Shield, Sparkles, Check, ArrowRight, Menu, X, BookOpen, MessageCircle } from 'lucide-react';
 
-const API_URL = import.meta.env.API_URL || 'https://mindcare-backend-production.up.railway.app';
+const API_URL = 'https://mindcare-backend-production.up.railway.app';
 
 export default function MindCareLanding() {
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -18,31 +20,39 @@ export default function MindCareLanding() {
   }, []);
 
   const handleWaitlistClick = async () => {
-    if (email && email.includes('@')) {
-      try {
-        const response = await fetch(`${API_URL}/api/waitlist/join`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email }),
-        });
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address');
+      return;
+    }
 
-        const data = await response.json();
+    setIsLoading(true);
+    setError('');
 
-        if (data.success) {
-          setIsSubmitted(true);
-          setTimeout(() => {
-            setEmail('');
-            setIsSubmitted(false);
-          }, 3000);
-        } else {
-          alert(data.message || 'Failed to join waitlist. Please try again.');
-        }
-      } catch (error) {
-        console.error('Error joining waitlist:', error);
-        alert('Failed to join waitlist. Please try again.');
+    try {
+      const response = await fetch(`${API_URL}/api/waitlist/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setIsSubmitted(true);
+        setEmail('');
+        setTimeout(() => {
+          setIsSubmitted(false);
+        }, 5000);
+      } else {
+        setError(data.message || 'Failed to join waitlist. Please try again.');
       }
+    } catch (error) {
+      console.error('Error joining waitlist:', error);
+      setError('Connection failed. Please check your internet and try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -163,22 +173,49 @@ export default function MindCareLanding() {
             {/* Waitlist Form */}
             <div id="waitlist" className="max-w-md mx-auto animate-slide-up" style={{animationDelay: '0.2s'}}>
               {!isSubmitted ? (
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    className="flex-1 px-6 py-4 rounded-full border-2 border-emerald-200 focus:border-emerald-500 focus:outline-none text-lg text-gray-900 bg-white"
-                  />
-                  <button
-                    onClick={handleWaitlistClick}
-                    className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2 whitespace-nowrap"
-                  >
-                    <span>Join Waitlist</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </button>
-                </div>
+                <>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setError('');
+                      }}
+                      onKeyPress={(e) => e.key === 'Enter' && handleWaitlistClick()}
+                      placeholder="Enter your email"
+                      disabled={isLoading}
+                      className={`flex-1 px-6 py-4 rounded-full border-2 ${
+                        error ? 'border-red-300' : 'border-emerald-200'
+                      } focus:border-emerald-500 focus:outline-none text-lg text-gray-900 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all`}
+                    />
+                    <button
+                      onClick={handleWaitlistClick}
+                      disabled={isLoading}
+                      className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
+                      {isLoading ? (
+                        <>
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Joining...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Join Waitlist</span>
+                          <ArrowRight className="w-5 h-5" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  {error && (
+                    <div className="mt-3 px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm animate-fade-in">
+                      {error}
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="px-6 py-4 bg-emerald-100 rounded-full flex items-center justify-center space-x-2 animate-bounce-in">
                   <Check className="w-6 h-6 text-emerald-600" />
@@ -319,22 +356,49 @@ export default function MindCareLanding() {
           </p>
           
           {!isSubmitted ? (
-            <div className="max-w-md mx-auto flex flex-col sm:flex-row gap-3">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Your email address"
-                className="flex-1 px-6 py-4 rounded-full border-2 border-white/30 bg-white/10 backdrop-blur-sm text-white placeholder-emerald-100 focus:border-white focus:outline-none text-lg caret-white"
-              />
-              <button
-                onClick={handleWaitlistClick}
-                className="px-8 py-4 bg-white text-emerald-600 rounded-full font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2 whitespace-nowrap"
-              >
-                <span>Get Early Access</span>
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
+            <>
+              <div className="max-w-md mx-auto flex flex-col sm:flex-row gap-3">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError('');
+                  }}
+                  onKeyPress={(e) => e.key === 'Enter' && handleWaitlistClick()}
+                  placeholder="Your email address"
+                  disabled={isLoading}
+                  className={`flex-1 px-6 py-4 rounded-full border-2 ${
+                    error ? 'border-red-300/50' : 'border-white/30'
+                  } bg-white/10 backdrop-blur-sm text-white placeholder-emerald-100 focus:border-white focus:outline-none text-lg caret-white disabled:opacity-50 disabled:cursor-not-allowed transition-all`}
+                />
+                <button
+                  onClick={handleWaitlistClick}
+                  disabled={isLoading}
+                  className="px-8 py-4 bg-white text-emerald-600 rounded-full font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Get Early Access</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )}
+                </button>
+              </div>
+              {error && (
+                <div className="max-w-md mx-auto mt-3 px-4 py-2 bg-red-500/20 border border-red-300/50 rounded-lg text-white text-sm animate-fade-in backdrop-blur-sm">
+                  {error}
+                </div>
+              )}
+            </>
           ) : (
             <div className="max-w-md mx-auto px-6 py-4 bg-white rounded-full flex items-center justify-center space-x-2 animate-bounce-in">
               <Check className="w-6 h-6 text-emerald-600" />
@@ -380,10 +444,10 @@ export default function MindCareLanding() {
             <div>
               <h3 className="text-white font-semibold mb-4">Resources</h3>
               <ul className="space-y-3">
-                <li><a href="/coming-soon" className="hover:text-emerald-400 transition-colors text-sm flex items-center">Blog <span className="ml-2 text-xs bg-emerald-600 text-white px-2 py-0.5 rounded">Soon</span></a></li>
-                <li><a href="/coming-soon" className="hover:text-emerald-400 transition-colors text-sm flex items-center">Help Center <span className="ml-2 text-xs bg-emerald-600 text-white px-2 py-0.5 rounded">Soon</span></a></li>
-                <li><a href="/coming-soon" className="hover:text-emerald-400 transition-colors text-sm flex items-center">Community <span className="ml-2 text-xs bg-emerald-600 text-white px-2 py-0.5 rounded">Soon</span></a></li>
-                <li><a href="/coming-soon" className="hover:text-emerald-400 transition-colors text-sm flex items-center">Therapist Directory <span className="ml-2 text-xs bg-emerald-600 text-white px-2 py-0.5 rounded">Soon</span></a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors text-sm flex items-center">Blog <span className="ml-2 text-xs bg-emerald-600 text-white px-2 py-0.5 rounded">Soon</span></a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors text-sm flex items-center">Help Center <span className="ml-2 text-xs bg-emerald-600 text-white px-2 py-0.5 rounded">Soon</span></a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors text-sm flex items-center">Community <span className="ml-2 text-xs bg-emerald-600 text-white px-2 py-0.5 rounded">Soon</span></a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors text-sm flex items-center">Therapist Directory <span className="ml-2 text-xs bg-emerald-600 text-white px-2 py-0.5 rounded">Soon</span></a></li>
               </ul>
             </div>
 
@@ -391,9 +455,9 @@ export default function MindCareLanding() {
             <div>
               <h3 className="text-white font-semibold mb-4">Legal & Support</h3>
               <ul className="space-y-3">
-                <li><a href="/coming-soon" className="hover:text-emerald-400 transition-colors text-sm">Privacy Policy</a></li>
-                <li><a href="/coming-soon" className="hover:text-emerald-400 transition-colors text-sm">Terms of Service</a></li>
-                <li><a href="/coming-soon" className="hover:text-emerald-400 transition-colors text-sm">Contact Us</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors text-sm">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors text-sm">Terms of Service</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors text-sm">Contact Us</a></li>
                 <li><a href="mailto:support@mindcare.com" className="hover:text-emerald-400 transition-colors text-sm">support@mindcare.com</a></li>
               </ul>
             </div>
